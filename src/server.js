@@ -7,7 +7,7 @@ import { exec } from "child_process";
 
 const execAsync = promisify(exec);
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080;
 
 // Allow frontend origins (set FRONTEND_URL in Railway, or * for testing)
 const allowedOrigin = process.env.FRONTEND_URL || "*";
@@ -229,18 +229,11 @@ app.get("/api/download", async (req, res) => {
   }
 });
 
-// Verify yt-dlp on boot
-async function boot() {
-  try {
-    const { stdout } = await execAsync("yt-dlp --version");
-    console.log("yt-dlp version:", stdout.trim());
-  } catch {
-    console.warn("WARNING: yt-dlp not found in PATH — downloads will fail");
-  }
+// Start server first so Railway healthchecks pass, then verify yt-dlp
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Vidora backend listening on 0.0.0.0:${PORT}`);
+});
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Vidora backend listening on :${PORT}`);
-  });
-}
-
-boot();
+execAsync("yt-dlp --version")
+  .then(({ stdout }) => console.log("yt-dlp version:", stdout.trim()))
+  .catch(() => console.warn("WARNING: yt-dlp not found — downloads will fail"));

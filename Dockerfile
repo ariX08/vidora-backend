@@ -1,13 +1,12 @@
 FROM node:20-bookworm-slim
 
-# Install yt-dlp + ffmpeg + python
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
-    python3-pip \
     ffmpeg \
     curl \
     ca-certificates \
-    && pip3 install --break-system-packages -U yt-dlp \
+    && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
+    && chmod a+rx /usr/local/bin/yt-dlp \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -18,9 +17,9 @@ RUN npm install --omit=dev
 
 COPY src ./src
 
-ENV PORT=3001
 ENV NODE_ENV=production
+# Railway injects PORT at runtime — do not hardcode
 
-EXPOSE 3001
+EXPOSE 8080
 
 CMD ["node", "src/server.js"]
